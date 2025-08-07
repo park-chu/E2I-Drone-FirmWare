@@ -21,11 +21,24 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "stm32f4xx_hal_i2c.h"
+#include "stm32f4xx_hal_gpio.h"
+#include "stm32f4xx_hal.h"
 
+#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+#define BNO055_I2C_ADDR 0x28 << 1
+#define BNO055_CHIP_ID_ADDR         0x00
+#define BNO055_OPR_MODE_ADDR        0x3D
+#define BNO055_PWR_MODE_ADDR        0x3E
+#define BNO055_SYS_TRIGGER_ADDR     0x3F
+#define BNO055_EULER_H_LSB_ADDR     0x1A
+
+// BNO055 작동 모드
+#define BNO055_OPERATION_MODE_NDOF  0x0C
 
 /* USER CODE END PTD */
 
@@ -36,7 +49,13 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-
+typedef struct {
+    float Kp;
+    float Ki;
+    float Kd;
+    float previous_error;
+    float integral;
+} PID_Controller;
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -60,7 +79,8 @@ static void MX_TIM2_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_TIM5_Init(void);
 /* USER CODE BEGIN PFP */
-
+void BNO055_Init(void);
+void BNO055_Read_Euler_Angles(int16_t *yaw, int16_t *roll, int16_t *pitch);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -120,8 +140,11 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  int16_t yaw, pitch, roll;
   while (1)
   {
+	 BNO055_Read_Raw_Euler_Angles(&yaw, &roll, &pitch);
+	 printf("Yaw: %d, Roll: %d, Pitch: %d\n", yaw/16, roll/16, pitch/16);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -443,7 +466,40 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void BNO055_Init(void) {
+    uint8_t chip_id = 0;
+    uint8_t config_data[2];
 
+    // BNO055 칩 ID 확인
+    HAL_I2C_Mem_Read(&hi2c1, BNO055_I2C_ADDR, BNO055_CHIP_ID_ADDR, 1, &chip_id, 1, HAL_MAX_DELAY);
+    if (chip_id != 0xA0) {
+        printf("BNO055 not detected!\r\n");
+        while (1); // 무한 대기
+    }
+
+    // 운영 모드 설정 (NDOF 모드)
+    config_data[0] = BNO055_OPR_MODE_ADDR;
+    config_data[1] = BNO055_OPERATION_MODE_NDOF;
+    HAL_I2C_Master_Transmit(&hi2c1, BNO055_I2C_ADDR, config_data, 2, HAL_MAX_DELAY);
+
+    HAL_Delay(20); // 설정 적용 대기
+}
+
+void BNO055_Read_Raw_Euler_Angles(int16_t *yaw, int16_t *roll, int16_t *pitch) {
+    uint8_t buffer[6]; // 6바이트 버퍼 (Yaw, Roll, Pitch 데이터)
+
+    // BNO055의 Euler Angles 레지스터에서 데이터 읽기
+    HAL_I2C_Mem_Read(&hi2c1, BNO055_I2C_ADDR, BNO055_EULER_H_LSB_ADDR, 1, buffer, 6, HAL_MAX_DELAY);
+
+    // 버퍼 데이터를 16비트 형식으로 변환
+    *yaw = (buffer[1] << 8) | buffer[0];  // Yaw 값
+    *roll = (buffer[3] << 8) | buffer[2]; // Roll 값
+    *pitch = (buffer[5] << 8) | buffer[4]; // Pitch 값
+}
+
+int __io_putchar(int ch) {
+  return ITM_SendChar(ch);
+}
 /* USER CODE END 4 */
 
 /**
