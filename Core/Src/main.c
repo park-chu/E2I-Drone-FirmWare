@@ -143,6 +143,7 @@ int main(void)
   int16_t yaw, pitch, roll;
   while (1)
   {
+
 	 BNO055_Read_Raw_Euler_Angles(&yaw, &roll, &pitch);
 	 printf("Yaw: %d, Roll: %d, Pitch: %d\n", yaw/16, roll/16, pitch/16);
     /* USER CODE END WHILE */
