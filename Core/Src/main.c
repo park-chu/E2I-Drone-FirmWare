@@ -123,20 +123,14 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM5_Init();
   /* USER CODE BEGIN 2 */
-  HAL_Delay(1000);
-
-  // 2. PWM 시작 전에 최소값(1000us)으로 설정
+  BNO055_Init();
   __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 1000);
 
-  // 3. PWM 출력 시작
+  // 2. PWM 출력 시작
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
 
-  // 4. ESC가 PWM 신호 인식할 수 있도록 대기
-  HAL_Delay(1000);
-
-  // 5. 원하는 속도로 변경 (예: 1500us 중간 속도)
-  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 1500);
-  /* USER CODE END 2 */
+  // 3. ESC가 초기화(Arming)될 때까지 2~3초 대기
+  HAL_Delay(3000);
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
@@ -147,7 +141,13 @@ int main(void)
 	 BNO055_Read_Raw_Euler_Angles(&yaw, &roll, &pitch);
 	 printf("Yaw: %d, Roll: %d, Pitch: %d\n", yaw/16, roll/16, pitch/16);
     /* USER CODE END WHILE */
+	  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 1100);
+	    HAL_Delay(2000); // 2초간 저속 회전
 
+	    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 1300);
+	      HAL_Delay(2000); // 2초간 중속 회전
+	      __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 1000);
+	       HAL_Delay(3000); // 3초 정지 후 반복
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -517,6 +517,8 @@ void Error_Handler(void)
   }
   /* USER CODE END Error_Handler_Debug */
 }
+
+
 #ifdef USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number
