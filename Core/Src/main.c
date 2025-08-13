@@ -79,8 +79,8 @@ static void MX_TIM2_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_TIM5_Init(void);
 /* USER CODE BEGIN PFP */
-void BNO055_Init(void);
-void BNO055_Read_Euler_Angles(int16_t *yaw, int16_t *roll, int16_t *pitch);
+//void BNO055_Init(void);
+//void BNO055_Read_Euler_Angles(int16_t *yaw, int16_t *roll, int16_t *pitch);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -123,11 +123,13 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM5_Init();
   /* USER CODE BEGIN 2 */
-  BNO055_Init();
+  //BNO055_Init();
   __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 1000);
+  __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 1000);
 
   // 2. PWM 출력 시작
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
 
   // 3. ESC가 초기화(Arming)될 때까지 2~3초 대기
   HAL_Delay(3000);
@@ -138,16 +140,12 @@ int main(void)
   while (1)
   {
 
-	 BNO055_Read_Raw_Euler_Angles(&yaw, &roll, &pitch);
-	 printf("Yaw: %d, Roll: %d, Pitch: %d\n", yaw/16, roll/16, pitch/16);
+//	 BNO055_Read_Raw_Euler_Angles(&yaw, &roll, &pitch);
+//	 printf("Yaw: %d, Roll: %d, Pitch: %d\n", yaw/16, roll/16, pitch/16);
     /* USER CODE END WHILE */
-	  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 1100);
-	    HAL_Delay(2000); // 2초간 저속 회전
+	__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 1300);
+	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 1300);
 
-	    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 1300);
-	      HAL_Delay(2000); // 2초간 중속 회전
-	      __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 1000);
-	       HAL_Delay(3000); // 3초 정지 후 반복
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
